@@ -50,6 +50,7 @@ CREATE POLICY "Public events are viewable by everyone" ON events
 -- WARNING: In production, you must restrict this to authenticated users only!
 CREATE POLICY "Enable insert for everyone" ON events FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable delete for everyone" ON events FOR DELETE USING (true);
+CREATE POLICY "Enable update for everyone" ON events FOR UPDATE USING (true) WITH CHECK (true);
 
 CREATE POLICY "Public cinemas are viewable by everyone" ON cinemas
     FOR SELECT USING (true);

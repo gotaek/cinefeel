@@ -1,29 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Trash2, Plus, Loader2, AlertCircle, Search, Image as ImageIcon, X, Pencil, RotateCcw } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { AdminHeader } from '@/components/AdminHeader';
 import { CinemaBadge } from '@/components/ui/CinemaBadge';
-
-// Helper for type safety if needed, or simply use 'any' for admin prototype speed
-interface AdminEvent {
-  id: number;
-  title: string;
-  cinema_id: number; // 1: CGV, 2: MegaBox, 3: Lotte
-  goods_type: string;
-  period: string;
-  image_url: string;
-  official_url: string;
-  status: string;
-  locations: string[];
-}
+import { searchMovies, getPosterUrl, TMDBMovie } from '@/lib/tmdb';
 
 export default function AdminPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  
+  // Edit State
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // TMDB Modal State
+  const [isPosterModalOpen, setIsPosterModalOpen] = useState(false);
+  const [posterQuery, setPosterQuery] = useState('');
+  const [posterResults, setPosterResults] = useState<TMDBMovie[]>([]);
+  const [isSearchingPoster, setIsSearchingPoster] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -33,7 +30,8 @@ export default function AdminPage() {
     period: '',
     image_url: '',
     official_url: '',
-    locationsInput: '' // comma separated
+    locationsInput: '', // comma separated
+    status: '진행중' // Added status field for edit
   });
 
   const fetchEvents = async () => {
@@ -57,6 +55,35 @@ export default function AdminPage() {
     fetchEvents();
   }, []);
 
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      cinema_id: 1,
+      goods_type: '',
+      period: '',
+      image_url: '',
+      official_url: '',
+      locationsInput: '',
+      status: '진행중'
+    });
+    setEditingId(null);
+  };
+
+  const handleEdit = (event: any) => {
+    setEditingId(event.id);
+    setFormData({
+      title: event.title,
+      cinema_id: event.cinema_id,
+      goods_type: event.goods_type,
+      period: event.period,
+      image_url: event.image_url,
+      official_url: event.official_url,
+      locationsInput: event.locations ? event.locations.join(', ') : '',
+      status: event.status
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
+  };
+
   const handleDelete = async (id: number) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     if (!supabase) return;
@@ -68,9 +95,33 @@ export default function AdminPage() {
       setMessage({ type: 'error', text: '삭제 실패: ' + error.message });
     } else {
       setMessage({ type: 'success', text: '삭제되었습니다.' });
+      if (editingId === id) resetForm();
       fetchEvents();
     }
     setActionLoading(false);
+  };
+
+  const handleSearchPoster = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!posterQuery.trim()) return;
+    
+    setIsSearchingPoster(true);
+    const results = await searchMovies(posterQuery);
+    setPosterResults(results);
+    setIsSearchingPoster(false);
+  };
+
+  const handleSelectPoster = (movie: TMDBMovie) => {
+    if (movie.poster_path) {
+      setFormData({
+        ...formData,
+        image_url: getPosterUrl(movie.poster_path),
+        title: movie.title // Always update title with TMDB official title
+      });
+      setIsPosterModalOpen(false);
+      setPosterQuery('');
+      setPosterResults([]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,7 +131,7 @@ export default function AdminPage() {
     setActionLoading(true);
     const locationsArray = formData.locationsInput.split(',').map(s => s.trim()).filter(Boolean);
 
-    const { error } = await supabase.from('events').insert([{
+    const payload = {
       title: formData.title,
       cinema_id: formData.cinema_id,
       goods_type: formData.goods_type,
@@ -88,22 +139,28 @@ export default function AdminPage() {
       image_url: formData.image_url,
       official_url: formData.official_url,
       locations: locationsArray,
-      status: '진행중'
-    }]);
+      status: formData.status
+    };
 
-    if (error) {
-      setMessage({ type: 'error', text: '등록 실패: ' + error.message });
+    let result;
+    if (editingId) {
+      // Update Mode
+      result = await supabase
+        .from('events')
+        .update(payload)
+        .eq('id', editingId);
     } else {
-      setMessage({ type: 'success', text: '이벤트가 등록되었습니다.' });
-      setFormData({
-        title: '',
-        cinema_id: 1,
-        goods_type: '',
-        period: '',
-        image_url: '',
-        official_url: '',
-        locationsInput: ''
-      });
+      // Create Mode
+      result = await supabase
+        .from('events')
+        .insert([payload]);
+    }
+
+    if (result.error) {
+      setMessage({ type: 'error', text: (editingId ? '수정' : '등록') + ' 실패: ' + result.error.message });
+    } else {
+      setMessage({ type: 'success', text: (editingId ? '수정' : '등록') + '되었습니다.' });
+      resetForm();
       fetchEvents();
     }
     setActionLoading(false);
@@ -122,7 +179,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans pb-20">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans pb-20 relative">
       <AdminHeader />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
@@ -135,21 +192,61 @@ export default function AdminPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-1">
-            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 sticky top-24">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <Plus className="w-5 h-5 text-red-500" /> 새 이벤트 등록
-              </h2>
+            <div className={`bg-neutral-900 border ${editingId ? 'border-red-500/50' : 'border-neutral-800'} rounded-2xl p-6 sticky top-24 transition-colors`}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  {editingId ? <Pencil className="w-5 h-5 text-red-500" /> : <Plus className="w-5 h-5 text-red-500" />} 
+                  {editingId ? '이벤트 수정' : '새 이벤트 등록'}
+                </h2>
+                {editingId && (
+                  <button onClick={resetForm} className="text-xs text-neutral-400 hover:text-white flex items-center gap-1">
+                    <RotateCcw className="w-3 h-3"/> 취소
+                  </button>
+                )}
+              </div>
+              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">영화 제목</label>
+                  <div className="flex gap-2">
+                    <input 
+                      required
+                      type="text" 
+                      value={formData.title}
+                      onChange={e => setFormData({...formData, title: e.target.value})}
+                      className="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm focus:border-red-500 outline-none"
+                      placeholder="예: 듄: 파트 2"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setPosterQuery(formData.title); // Pre-fill search with current title
+                        setIsPosterModalOpen(true);
+                      }}
+                      className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 p-2 rounded-lg transition-colors"
+                      title="TMDB 영화 검색"
+                    >
+                      <Search className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">포스터 이미지 URL</label>
                   <input 
                     required
                     type="text" 
-                    value={formData.title}
-                    onChange={e => setFormData({...formData, title: e.target.value})}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm focus:border-red-500 outline-none"
-                    placeholder="예: 듄: 파트 2"
+                    value={formData.image_url}
+                    onChange={e => setFormData({...formData, image_url: e.target.value})}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm focus:border-red-500 outline-none truncate"
+                    placeholder="https://..."
                   />
+                  {formData.image_url && (
+                    <div className="mt-2 w-20 aspect-[2/3] bg-neutral-800 rounded overflow-hidden border border-neutral-700">
+                       {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -190,16 +287,20 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">이미지 URL</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={formData.image_url}
-                    onChange={e => setFormData({...formData, image_url: e.target.value})}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm focus:border-red-500 outline-none"
-                    placeholder="https://..."
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-bold text-neutral-500 uppercase mb-1">상태</label>
+                        <select 
+                        value={formData.status}
+                        onChange={e => setFormData({...formData, status: e.target.value})}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm focus:border-red-500 outline-none"
+                        >
+                        <option value="진행중">진행중</option>
+                        <option value="마감임박">마감임박</option>
+                        <option value="종료">종료</option>
+                        <option value="예정">예정</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div>
@@ -226,9 +327,9 @@ export default function AdminPage() {
                 <button 
                   disabled={actionLoading}
                   type="submit" 
-                  className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className={`w-full ${editingId ? 'bg-blue-600 hover:bg-blue-500' : 'bg-red-600 hover:bg-red-500'} text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50`}
                 >
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : '이벤트 등록'}
+                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : editingId ? '수정 사항 저장' : '이벤트 등록'}
                 </button>
               </form>
             </div>
@@ -247,8 +348,9 @@ export default function AdminPage() {
               </div>
             ) : (
               events.map((event) => (
-                <div key={event.id} className="bg-neutral-900 border border-neutral-800 hover:border-neutral-700 rounded-xl p-4 flex gap-4 transition-all">
-                  <div className="w-16 h-24 bg-neutral-800 rounded-lg shrink-0 overflow-hidden">
+                <div key={event.id} className={`bg-neutral-900 border ${editingId === event.id ? 'border-blue-500/50 bg-blue-900/10' : 'border-neutral-800 hover:border-neutral-700'} rounded-xl p-4 flex gap-4 transition-all`}>
+                  <div className="w-16 h-24 bg-neutral-800 rounded-lg shrink-0 overflow-hidden relative group">
+                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={event.image_url} alt="" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-grow min-w-0">
@@ -265,17 +367,28 @@ export default function AdminPage() {
                        {(event.locations?.length || 0) > 3 && <span className="text-[10px] text-neutral-500 pl-1">...</span>}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end justify-between">
-                     <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${event.status === '마감임박' ? 'bg-orange-900 text-orange-200' : 'bg-green-900 text-green-200'}`}>
+                  <div className="flex flex-col items-end justify-between gap-2">
+                     <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${event.status === '종료' ? 'bg-neutral-800 text-neutral-500' : event.status === '마감임박' ? 'bg-orange-900 text-orange-200' : 'bg-green-900 text-green-200'}`}>
                         {event.status}
                      </span>
-                     <button 
-                      onClick={() => handleDelete(event.id)}
-                      disabled={actionLoading}
-                      className="p-2 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                    >
-                       <Trash2 className="w-4 h-4" />
-                     </button>
+                     <div className="flex gap-1">
+                        <button 
+                            onClick={() => handleEdit(event)}
+                            disabled={actionLoading}
+                            className={`p-2 rounded-lg transition-colors ${editingId === event.id ? 'text-blue-500 bg-blue-500/20' : 'text-neutral-500 hover:text-blue-500 hover:bg-blue-500/10'}`}
+                            title="수정"
+                        >
+                            <Pencil className="w-4 h-4" />
+                        </button>
+                        <button 
+                            onClick={() => handleDelete(event.id)}
+                            disabled={actionLoading}
+                            className="p-2 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="삭제"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                     </div>
                   </div>
                 </div>
               ))
@@ -283,6 +396,71 @@ export default function AdminPage() {
           </div>
         </div>
       </main>
+
+      {/* TMDB Search Modal */}
+      {isPosterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[80vh]">
+            <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
+              <h3 className="font-bold text-lg">TMDB 영화 포스터 검색</h3>
+              <button onClick={() => setIsPosterModalOpen(false)}><X className="w-5 h-5" /></button>
+            </div>
+            
+            <div className="p-4">
+              <form onSubmit={handleSearchPoster} className="flex gap-2">
+                <input 
+                  autoFocus
+                  type="text" 
+                  value={posterQuery}
+                  onChange={e => setPosterQuery(e.target.value)}
+                  placeholder="영화 제목 (예: 듄)"
+                  className="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:border-red-500 outline-none"
+                />
+                <button 
+                  type="submit" 
+                  disabled={isSearchingPoster}
+                  className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-bold"
+                >
+                  {isSearchingPoster ? <Loader2 className="w-5 h-5 animate-spin"/> : '검색'}
+                </button>
+              </form>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+              {posterResults.map(movie => (
+                <button 
+                  key={movie.id}
+                  onClick={() => handleSelectPoster(movie)}
+                  className="text-left group"
+                >
+                  <div className="aspect-[2/3] bg-neutral-800 rounded-lg overflow-hidden mb-2 relative">
+                    {movie.poster_path ? (
+                      <img 
+                        src={getPosterUrl(movie.poster_path)} 
+                        alt={movie.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-neutral-600">
+                        <ImageIcon className="w-8 h-8"/>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold leading-tight line-clamp-2">{movie.title}</p>
+                    <p className="text-[10px] text-neutral-500">{movie.release_date?.split('-')[0]}</p>
+                  </div>
+                </button>
+              ))}
+              {!isSearchingPoster && posterResults.length === 0 && posterQuery && (
+                  <div className="col-span-full text-center py-10 text-neutral-500">
+                      검색 결과가 없습니다.
+                  </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
