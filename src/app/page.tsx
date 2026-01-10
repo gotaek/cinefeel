@@ -96,17 +96,10 @@ export default function Home() {
         <div className="mb-8 flex items-end justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              {isLiveMode ? (
-                <div className="flex items-center gap-2 text-green-500">
-                  <Database className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Live DB Connected</span>
-                </div>
-              ) : (
                 <div className="flex items-center gap-2 text-red-500">
-                  <Sparkles className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Demo Mode (Mock Data)</span>
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                  <span className="text-xs font-bold uppercase tracking-widest">Now Showing</span>
                 </div>
-              )}
             </div>
             <h2 className="text-3xl font-bold italic tracking-tight uppercase">
               Live Goods Feed

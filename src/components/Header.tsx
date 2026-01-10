@@ -1,5 +1,4 @@
-import React from 'react';
-import { Search, Ticket } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface HeaderProps {
   filter: string;
@@ -13,8 +12,9 @@ export const Header: React.FC<HeaderProps> = ({ filter, setFilter, searchQuery, 
     <header className="sticky top-0 z-40 bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Ticket className="text-red-500 w-6 h-6" />
-          <h1 className="text-xl font-black tracking-tighter uppercase italic">Goods Hub</h1>
+           {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="CINEFEEL Logo" className="w-8 h-8 object-contain" />
+          <h1 className="text-xl font-black tracking-tighter uppercase italic">CINEFEEL</h1>
         </div>
         
         <div className="hidden md:flex items-center gap-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800">

@@ -13,7 +13,7 @@ export const Footer: React.FC = () => {
                         각 배급사 및 해당 기업에 있습니다.
                     </p>
                     <p className="text-xs text-neutral-600">
-                        저작권 관련 문의: gotaek@example.com <br/>
+                        저작권 관련 문의: deriko@naver.com <br/>
                         (저작권자의 요청 시 관련 이미지는 즉시 삭제될 수 있습니다.)
                     </p>
                 </div>
