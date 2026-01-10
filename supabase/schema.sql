@@ -48,9 +48,10 @@ CREATE POLICY "Public events are viewable by everyone" ON events
 
 -- MVP: Allow INSERT/DELETE for Admin Page (Since we don't have Auth yet)
 -- WARNING: In production, you must restrict this to authenticated users only!
-CREATE POLICY "Enable insert for everyone" ON events FOR INSERT WITH CHECK (true);
-CREATE POLICY "Enable delete for everyone" ON events FOR DELETE USING (true);
-CREATE POLICY "Enable update for everyone" ON events FOR UPDATE USING (true) WITH CHECK (true);
+-- Secure Policies: Allow INSERT/UPDATE/DELETE only for authenticated users (Admin)
+CREATE POLICY "Enable insert for authenticated users only" ON events FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Enable delete for authenticated users only" ON events FOR DELETE TO authenticated USING (true);
+CREATE POLICY "Enable update for authenticated users only" ON events FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 
 CREATE POLICY "Public cinemas are viewable by everyone" ON cinemas
     FOR SELECT USING (true);

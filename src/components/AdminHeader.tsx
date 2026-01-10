@@ -1,8 +1,18 @@
 import React from 'react';
 import { ShieldCheck, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export const AdminHeader: React.FC = () => {
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-neutral-900 border-b border-neutral-800">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -11,13 +21,13 @@ export const AdminHeader: React.FC = () => {
           <h1 className="text-lg font-bold tracking-tight text-white">Cinefeel Admin</h1>
         </Link>
         
-        <Link 
-          href="/" 
+        <button 
+          onClick={handleSignOut}
           className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          Exit to Site
-        </Link>
+          Sign Out
+        </button>
       </div>
     </header>
   );

@@ -7,9 +7,13 @@ import { AdminHeader } from '@/components/AdminHeader';
 import { CinemaBadge } from '@/components/ui/CinemaBadge';
 import { searchMovies, getPosterUrl, TMDBMovie } from '@/lib/tmdb';
 
+import { useRouter } from 'next/navigation';
+
 export default function AdminPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start loading true for auth check
+  const [authChecking, setAuthChecking] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
@@ -52,8 +56,28 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    const checkAuth = async () => {
+      if (!isSupabaseConfigured() || !supabase) return;
+      
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        router.push('/login');
+        return;
+      }
+      setAuthChecking(false);
+      fetchEvents(); // Load data after auth confirmation
+    };
+
+    checkAuth();
+  }, [router]);
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
+      </div>
+    );
+  }
 
   const resetForm = () => {
     setFormData({
