@@ -1,65 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, ExternalLink, Lightbulb, Utensils, Loader2 } from 'lucide-react';
+import React from 'react';
+import { X, Calendar, MapPin, ExternalLink } from 'lucide-react';
 import { Event } from '@/types';
 import { CinemaBadge } from '@/components/ui/CinemaBadge';
-import { fetchGemini } from '@/lib/gemini';
 
 interface EventModalProps {
   event: Event;
   closeModal: () => void;
-  apiKey: string;
 }
 
-export const EventModal: React.FC<EventModalProps> = ({ event, closeModal, apiKey }) => {
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiContent, setAiContent] = useState<string | null>(null);
-  const [aiType, setAiType] = useState<'strategy' | 'combo' | null>(null);
-
-  // Reset AI state when event changes (though modal creates new instance mostly)
-  useEffect(() => {
-    setAiContent(null);
-    setAiType(null);
-    setAiLoading(false);
-  }, [event]);
-
-  const handleGetAiStrategy = async () => {
-    setAiLoading(true);
-    setAiType('strategy');
-    setAiContent(null);
-    try {
-      if (!apiKey) {
-        setAiContent("API Key가 설정되지 않았습니다.");
-        return;
-      }
-      const prompt = `영화 '${event.title}'의 '${event.goodsType}' 굿즈를 수령하기 위한 전략을 친절하고 전문적으로 알려줘. 영화의 장르와 팬덤의 크기를 고려해서, 어떤 시간에 방문해야 할지, 어떤 지점이 유리할지 등에 대한 조언을 포함해서 3문장 이내로 한국어로 답변해줘.`;
-      const result = await fetchGemini(prompt, apiKey);
-      setAiContent(result);
-    } catch {
-      setAiContent("AI 분석 중 오류가 발생했습니다. 나중에 다시 시도해 주세요.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleGetAiCombo = async () => {
-    setAiLoading(true);
-    setAiType('combo');
-    setAiContent(null);
-    try {
-      if (!apiKey) {
-         setAiContent("API Key가 설정되지 않았습니다.");
-         return;
-      }
-      const prompt = `영화 '${event.title}'의 분위기와 세계관에 어울리는 영화관 매점 콤보나 특별한 간식 조합을 추천해줘. 영화의 테마와 연관 지어서 창의적으로 추천하고 그 이유를 2문장 이내로 한국어로 설명해줘.`;
-      const result = await fetchGemini(prompt, apiKey);
-      setAiContent(result);
-    } catch {
-      setAiContent("AI 추천 중 오류가 발생했습니다. 나중에 다시 시도해 주세요.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
+export const EventModal: React.FC<EventModalProps> = ({ event, closeModal }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div 
@@ -121,44 +70,6 @@ export const EventModal: React.FC<EventModalProps> = ({ event, closeModal, apiKe
                   </span>
                 ))}
               </div>
-            </section>
-
-            {/* AI Interaction Zone ✨ */}
-            <section className="bg-neutral-950/50 rounded-2xl p-6 border border-neutral-800 space-y-5">
-              <div className="flex flex-wrap gap-3">
-                <button 
-                  onClick={handleGetAiStrategy}
-                  disabled={aiLoading}
-                  className="flex-1 flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-[11px] font-bold py-3.5 px-4 rounded-xl transition-all border border-neutral-700 shadow-sm"
-                >
-                  {aiLoading && aiType === 'strategy' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Lightbulb className="w-3 h-3 text-yellow-400" />}
-                  수령 전략 분석 ✨
-                </button>
-                <button 
-                  onClick={handleGetAiCombo}
-                  disabled={aiLoading}
-                  className="flex-1 flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-[11px] font-bold py-3.5 px-4 rounded-xl transition-all border border-neutral-700 shadow-sm"
-                >
-                  {aiLoading && aiType === 'combo' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Utensils className="w-3 h-3 text-red-500" />}
-                  테마 메뉴 추천 ✨
-                </button>
-              </div>
-
-              {/* AI Response Area */}
-              {(aiLoading || aiContent) && (
-                <div className="bg-neutral-900/50 rounded-xl p-5 border-l-4 border-red-500 min-h-[80px] flex items-center justify-center relative overflow-hidden shadow-inner">
-                  {aiLoading ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin text-red-500" />
-                      <span className="text-[10px] text-neutral-500 animate-pulse font-mono tracking-tighter">AI THINKING...</span>
-                    </div>
-                  ) : (
-                    <p className="text-xs leading-relaxed text-neutral-300 italic">
-                      "{aiContent}"
-                    </p>
-                  )}
-                </div>
-              )}
             </section>
           </div>
 
