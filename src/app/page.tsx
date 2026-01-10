@@ -5,14 +5,13 @@ import { Sparkles, Database } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { EventCard } from '@/components/EventCard';
 import { EventModal } from '@/components/EventModal';
-import { INITIAL_EVENTS } from '@/data/mock';
 import { Event } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 // API Key removed for now as AI features are postponed
 
 export default function Home() {
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [filter, setFilter] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
