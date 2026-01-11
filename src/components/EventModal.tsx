@@ -28,7 +28,8 @@ export const EventModal: React.FC<EventModalProps> = ({ event, closeModal }) => 
         onClick={closeModal}
       ></div>
       
-      <div className="relative bg-neutral-900 border border-neutral-800 w-full max-w-4xl max-h-[90vh] md:h-[600px] flex flex-col md:flex-row rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+      {/* Container: Max height 90vh on desktop, Fixed 85vh on mobile to ensure scrolling works */}
+      <div className="relative bg-neutral-900 border border-neutral-800 w-full max-w-4xl h-[85vh] md:max-h-[90vh] md:h-[600px] flex flex-col md:flex-row rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
         <button 
           onClick={closeModal}
           className="absolute top-6 right-6 z-20 p-2 bg-black/50 hover:bg-neutral-800 rounded-full transition-colors"
@@ -52,16 +53,28 @@ export const EventModal: React.FC<EventModalProps> = ({ event, closeModal }) => 
 
             {/* Scrollable Container */}
             {/* 데스크탑: 컨텐츠 영역만 스크롤, 모바일: 포스터 포함 전체 스크롤 */}
-            <div className="w-full md:w-[60%] bg-neutral-900 overflow-y-auto h-full scrollbar-thin scrollbar-thumb-neutral-700 touch-pan-y">
-                {/* Mobile Poster (스크롤 컨테이너 안에 포함, 터치 스크롤 가능) */}
-                <div className="md:hidden relative w-full h-[50vh] min-h-[300px] max-h-[400px] shrink-0 touch-pan-y">
+            <div className="w-full md:w-[60%] bg-neutral-900 overflow-y-auto h-full scrollbar-thin scrollbar-thumb-neutral-700 overscroll-contain">
+                {/* Mobile Poster (스크롤 컨테이너 안에 포함) */}
+                {/* Use 'Blurred Background' style to show full poster without cropping */}
+                <div className="md:hidden relative w-full h-[35vh] min-h-[250px] max-h-[350px] shrink-0 overflow-hidden bg-neutral-900">
+                    {/* Layer 1: Blurred Background (Fill) */}
                     <img 
                         src={event.imageUrl} 
-                        className="w-full h-full object-cover opacity-90 pointer-events-none select-none" 
+                        className="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 pointer-events-none select-none" 
+                        alt=""
+                        draggable="false"
+                    />
+                    
+                    {/* Layer 2: Main Poster (Contain) */}
+                    <img 
+                        src={event.imageUrl} 
+                        className="relative z-10 w-full h-full object-contain pointer-events-none select-none" 
                         alt={event.title}
                         draggable="false"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent pointer-events-none"></div>
+
+                    {/* Layer 3: Gradient Overlay */}
+                    <div className="absolute inset-0 z-20 bg-gradient-to-t from-neutral-900 via-transparent to-transparent pointer-events-none"></div>
                 </div>
 
                 {/* Content */}
