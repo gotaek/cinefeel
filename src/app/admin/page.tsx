@@ -37,7 +37,7 @@ export default function AdminPage() {
     image_url: '',
     official_url: '',
     locationsInput: '', // comma separated
-    status: '진행중',
+    status: '예정',
     is_visible: false,
     is_new: false
   });
@@ -119,7 +119,7 @@ export default function AdminPage() {
       image_url: '',
       official_url: '',
       locationsInput: '',
-      status: '진행중',
+      status: '예정',
       is_visible: true,
       is_new: false
     });
@@ -138,7 +138,7 @@ export default function AdminPage() {
       image_url: event.image_url || '',
       official_url: event.official_url || '',
       locationsInput: event.locations ? event.locations.join(', ') : '',
-      status: event.status || '진행중',
+      status: event.status || '예정',
       is_visible: event.is_visible ?? false,
       is_new: event.is_new ?? false
     });

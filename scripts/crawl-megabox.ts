@@ -491,42 +491,62 @@ async function processDetail(browser: Browser, url: string): Promise<string | nu
     // const key = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY;
     // console.log(`🔑 TMDB Key Debug: Value="${key ? key.substring(0, 5) + '...' : 'undefined'}", Length=${key?.length}`);
 
-    // 3. Process each new event
-    for (const event of newEvents) {
-        // Quick filter for testing to avoid rate limits
-        if (!event.title.includes('누벨바그')) {
-            continue;
-        }
+    // 3. Filter New Events (Keyword "증정" or "굿즈" AND Not in DB)
+    const targetEvents = allEvents.filter(e => {
+        // A. Keyword Filter
+        const hasKeyword = ['증정', '굿즈'].some(keyword => e.title.includes(keyword));
+        if (!hasKeyword) return false;
 
+        // B. DB Helper Flag
+        // Verify if it's already in our set of existing URLs.
+        if (existingUrls.has(e.detailUrl)) {
+            // Already exists
+            return false;
+        }
+        return true;
+    });
+
+    console.log(`Found ${targetEvents.length} events to process (Keywords: '증정', '굿즈' + New to DB).`);
+
+    // 4. Process each event
+    for (const event of targetEvents) {
         console.log(`Processing: ${event.title}...`);
         
-        // A. Screenshot
+        // Go to detail page and screenshot
         const screenshotPath = await processDetail(browser, event.detailUrl);
-        
         if (!screenshotPath) continue;
 
-        // B. Gemini
+        // Analyze with Gemini
         const analysis = await analyzeImageWithGemini(screenshotPath);
-        console.log("Gemini Analysis:", analysis);
-        
-        // Cleanup screenshot? 
-        // User requested: "이미지를 잘 정리해서 수집하도록 하나의 폴더를 만들어주고"
-        // So we do NOT delete it.
-        // fs.unlinkSync(screenshotPath);
+        if (analysis) {
+            // Create enriched event object
+            const enrichedEvent: EnrichedEvent = {
+                ...event,
+                movieTitle: analysis.movieTitle || event.title,
+                goodsType: analysis.goodsType || 'Unknown',
+                locations: analysis.locations || [],
+                posterPath: undefined // Optional in interface
+            };
+            
+            // Save to Google Sheets
+            await saveToSheets(enrichedEvent);
 
-        // C. TMDB - Skipped as requested
-        // const posterPath = await searchTmdb(analysis.movieTitle || event.title);
-        
-        // D. Enrichment
-        const enriched: EnrichedEvent = {
-            ...event,
-            ...analysis,
-            posterPath: undefined // No poster search
-        };
+            // Save to Supabase
+            await saveToSupabase(enrichedEvent);
+        }
 
-        // E. Save
-        await saveToSheets(enriched);
-        await saveToSupabase(enriched);
+        // Cleanup: Delete screenshot after processing
+        try {
+            if (fs.existsSync(screenshotPath)) {
+                fs.unlinkSync(screenshotPath);
+                console.log(`   🗑️  Deleted temporary screenshot: ${screenshotPath}`);
+            }
+        } catch (err) {
+            console.error(`   ⚠️  Failed to delete screenshot:`, err);
+        }
+
+        // 딜레이 (Rate Limit 방지)
+        await new Promise(resolve => setTimeout(resolve, 3000));
     }
 
     await browser.close();
