@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 
 export default function AdminPage() {
   const router = useRouter();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true); // Start loading true for auth check
   const [authChecking, setAuthChecking] = useState(true);
@@ -95,6 +96,7 @@ export default function AdminPage() {
     setEditingId(null);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEdit = (event: any) => {
     setEditingId(event.id);
     setFormData({

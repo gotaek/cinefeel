@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { TMDB } from 'tmdb-ts';
+
 import * as dotenv from 'dotenv';
 import fs from 'fs';
 
@@ -14,9 +14,9 @@ dotenv.config({ path: '.env.local' });
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!; // Use Service Role for admin access
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
-const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY!; // Support both names
+// const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY!; // Support both names
 const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!;
-const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')!;
+const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID!;
 
 // Validate Env
@@ -24,7 +24,7 @@ const requiredVars = {
   SUPABASE_URL,
   SUPABASE_KEY,
   GEMINI_API_KEY,
-  TMDB_API_KEY,
+  // TMDB_API_KEY,
   GOOGLE_SERVICE_ACCOUNT_EMAIL,
   GOOGLE_PRIVATE_KEY,
   GOOGLE_SHEET_ID
@@ -43,7 +43,7 @@ if (missing.length > 0) {
 // --- Clients ---
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const tmdb = new TMDB(TMDB_API_KEY);
+// const tmdb = new TMDB(TMDB_API_KEY);
 
 // --- Types ---
 interface ScrapedEvent {
@@ -73,6 +73,7 @@ async function getExistingUrls(): Promise<Set<string>> {
     console.error('Error fetching existing events:', error);
     return new Set();
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new Set(data.map((e: any) => e.official_url));
 }
 
@@ -88,7 +89,7 @@ async function crawlMegaboxList(): Promise<ScrapedEvent[]> {
     // Wait for list to load
     try {
         await page.waitForSelector('.event-list', { timeout: 10000 });
-    } catch (e) {
+    } catch {
         console.log("Timeout waiting for .event-list. Taking screenshot...");
         await page.screenshot({ path: 'debug_list_page.png', fullPage: true });
     }
@@ -100,6 +101,7 @@ async function crawlMegaboxList(): Promise<ScrapedEvent[]> {
         if (!listContainer) return { html: 'No container' };
         
         const items = document.querySelectorAll('.event-list li');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const results: any[] = [];
         
         items.forEach((item) => {
@@ -130,6 +132,7 @@ async function crawlMegaboxList(): Promise<ScrapedEvent[]> {
         console.log('Saved debug_html.txt');
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const eventList = (events as any).results || [];
 
     console.log(`Found ${eventList.length} events on the list page.`);
@@ -197,8 +200,9 @@ async function analyzeImageWithGemini(imagePath: string): Promise<{ movieTitle: 
 
     console.log('🔍 Gemini 이미지 분석 시작...');
     
-    let rawResponse = '';
+
     let retries = 3;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let result: any;
     
     while (retries > 0) {
@@ -208,6 +212,7 @@ async function analyzeImageWithGemini(imagePath: string): Promise<{ movieTitle: 
                 { inlineData: { data: imageBase64, mimeType: "image/png" } }
             ]);
             break; // Success
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
              if (e.message && e.message.includes('429')) {
                  console.warn(`⏳ Gemini Rate Limit (429). Retrying in 20s... (${retries} left)`);
@@ -240,7 +245,7 @@ async function analyzeImageWithGemini(imagePath: string): Promise<{ movieTitle: 
     let parsed: { movieTitle: string, goodsType: string, locations: string[] };
     try {
       parsed = JSON.parse(cleanJson);
-    } catch (parseError) {
+    } catch {
       console.error('❌ JSON 파싱 실패. 재시도 중...');
       console.error('   파싱 시도한 텍스트:', cleanJson.substring(0, 300));
       
@@ -268,6 +273,7 @@ async function analyzeImageWithGemini(imagePath: string): Promise<{ movieTitle: 
     console.log('✅ Gemini 분석 완료:', result_cleaned);
     return result_cleaned;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     console.error('❌ Gemini 분석 실패:');
     console.error('   에러 타입:', e.constructor?.name || 'Unknown');
@@ -281,7 +287,7 @@ async function analyzeImageWithGemini(imagePath: string): Promise<{ movieTitle: 
       const debugPath = `debug_failed_${Date.now()}.png`;
       fs.copyFileSync(imagePath, debugPath);
       console.error(`   디버깅용 스크린샷 저장: ${debugPath}`);
-    } catch (copyError) {
+    } catch {
       // 스크린샷 저장 실패는 무시
     }
     
@@ -289,21 +295,7 @@ async function analyzeImageWithGemini(imagePath: string): Promise<{ movieTitle: 
   }
 }
 
-async function searchTmdb(movieTitle: string): Promise<string | undefined> {
-  try {
-    const search = await tmdb.search.movies({ query: movieTitle, include_adult: false, language: 'ko-KR' });
-    if (search.results.length > 0) {
-            // Check if poster_path exists
-            if (search.results[0].poster_path) {
-                return `https://image.tmdb.org/t/p/original${search.results[0].poster_path}`;
-            }
-        }
-        return undefined;
-  } catch (e) {
-    console.error('TMDB search failed:', e);
-    return undefined;
-  }
-}
+
 
 async function saveToSheets(event: EnrichedEvent) {
   try {
@@ -404,7 +396,7 @@ async function processDetail(browser: Browser, url: string): Promise<string | nu
                     console.log(`   ✅ 요소 찾음: ${selector}`);
                     break;
                 }
-            } catch (e) {
+            } catch {
                 // 다음 선택자 시도
                 continue;
             }
@@ -442,6 +434,7 @@ async function processDetail(browser: Browser, url: string): Promise<string | nu
         console.log(`   ✅ 스크린샷 저장 완료: ${screenshotPath}`);
         return screenshotPath;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         console.error(`❌ 상세 페이지 처리 실패 ${url}:`);
         console.error(`   에러: ${e.message || e}`);
@@ -474,9 +467,8 @@ async function processDetail(browser: Browser, url: string): Promise<string | nu
     // Launch browser for details (re-using chromium execution)
     const browser = await chromium.launch();
     
-    // Debug TMDB Key
-    const key = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY;
-    console.log(`🔑 TMDB Key Debug: Value="${key ? key.substring(0, 5) + '...' : 'undefined'}", Length=${key?.length}`);
+    // const key = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY;
+    // console.log(`🔑 TMDB Key Debug: Value="${key ? key.substring(0, 5) + '...' : 'undefined'}", Length=${key?.length}`);
 
     // 3. Process each new event
     for (const event of newEvents) {
