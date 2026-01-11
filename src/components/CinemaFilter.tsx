@@ -9,7 +9,7 @@ interface CinemaFilterProps {
 export const CinemaFilter: React.FC<CinemaFilterProps> = ({ filter, setFilter }) => {
   return (
     <div className="flex justify-center w-full mb-8">
-      <div className="flex items-center gap-0.5 md:gap-1 bg-neutral-900 p-0.5 md:p-1 rounded-xl border border-neutral-800 shadow-sm w-full max-w-full md:max-w-none">
+      <div className="flex items-center gap-0.5 md:gap-1 bg-neutral-900 p-0.5 md:p-1 rounded-xl border border-neutral-800 shadow-sm w-full md:w-fit">
         {['전체', 'CGV', '메가박스', '롯데시네마'].map((tab) => (
           <button
             key={tab}

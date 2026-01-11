@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Calendar } from 'lucide-react';
 import { Event } from '@/types';
 import { CinemaBadge } from '@/components/ui/CinemaBadge';
 
@@ -112,11 +112,17 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
             </div>
           )}
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-12 pb-4 px-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-          <p className="text-[10px] text-red-400 font-bold mb-1 uppercase tracking-wider italic flex items-center gap-1 drop-shadow-md">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-12 pb-6 px-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+          <p className="text-xs text-red-400 font-bold mb-1 uppercase tracking-wider italic flex items-center gap-1 drop-shadow-md">
             <Sparkles className="w-3 h-3" /> {event.goodsType}
           </p>
           <h3 className="text-sm font-bold leading-tight mb-1 break-words text-white drop-shadow-md">{event.title}</h3>
+          {event.period && (
+            <p className="text-[10px] text-neutral-300 flex items-center gap-1 font-medium opacity-90 drop-shadow-md">
+              <span className="w-2.5 h-2.5"><Calendar size={10} /></span>
+              {event.period.split('~')[0]} ~
+            </p>
+          )}
         </div>
       </div>
     </div>

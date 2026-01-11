@@ -78,17 +78,59 @@ export default function Home() {
   // Sort events: Latest start date first
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => {
+      // Helper to parse start date
       const getStartDate = (period: string) => {
         if (!period) return 0;
-        // Extract first date "2024.03.01" from "2024.03.01 ~ ..."
         const match = period.match(/(\d{4}\.\d{2}\.\d{2})/);
         if (match) {
           const [y, m, d] = match[0].split('.').map(Number);
           return new Date(y, m - 1, d).getTime();
         }
-        return 0; // Fallback for unknown dates
+        return 9999999999999; // Far future for unknown dates
       };
-      return getStartDate(b.period) - getStartDate(a.period);
+
+      const now = new Date().getTime();
+      const aStart = getStartDate(a.period);
+      const bStart = getStartDate(b.period);
+      
+      // Helper to calculate status priority
+      // 0: Active (started <= now < ended)
+      // 1: Upcoming (now < started)
+      // 2: Ended
+      const getStatusPriority = (event: Event, start: number) => {
+        if (event.status === '종료') return 2;
+        
+        // Check if ended by date
+        if (event.period && event.period.includes('~')) {
+            const endDateString = event.period.split('~')[1]?.trim();
+            if (endDateString && !endDateString.includes('소진')) {
+                const dateParts = endDateString.split('.');
+                if (dateParts.length === 3) {
+                   const end = new Date(
+                     parseInt(dateParts[0]), 
+                     parseInt(dateParts[1]) - 1, 
+                     parseInt(dateParts[2])
+                   );
+                   end.setHours(23, 59, 59, 999);
+                   if (now > end.getTime()) return 2; // Ended by date
+                }
+            }
+        }
+
+        if (now < start) return 1; // Upcoming
+        return 0; // Active
+      };
+
+      const aPriority = getStatusPriority(a, aStart);
+      const bPriority = getStatusPriority(b, bStart);
+
+      // 1. Sort by Status Priority
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+
+      // 2. Sort by Start Date (Earliest first)
+      return aStart - bStart;
     });
   }, [events]);
 
