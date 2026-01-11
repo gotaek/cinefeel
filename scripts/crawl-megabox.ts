@@ -99,7 +99,7 @@ async function crawlMegaboxList(): Promise<ScrapedEvent[]> {
     const events = await page.evaluate(() => {
         // Debug: return HTML
         const listContainer = document.querySelector('.event-list');
-        if (!listContainer) return { html: 'No container' };
+        if (!listContainer) return [];
         
         const items = document.querySelectorAll('.event-list li');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -129,8 +129,14 @@ async function crawlMegaboxList(): Promise<ScrapedEvent[]> {
         return results;
     });
     
+    // Explicitly cast to array or check if array
+    if (!Array.isArray(events)) {
+        console.warn('Unexpected return from evaluate');
+        return [];
+    }
+    
     console.log(`Found ${events.length} events on the list page.`);
-    return events;
+    return events as ScrapedEvent[];
 
   } catch (e) {
     console.error('Error in crawlMegaboxList:', e);
