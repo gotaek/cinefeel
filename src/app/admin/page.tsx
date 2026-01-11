@@ -38,7 +38,8 @@ export default function AdminPage() {
     official_url: '',
     locationsInput: '', // comma separated
     status: '진행중',
-    is_visible: false // New field state
+    is_visible: false,
+    is_new: false
   });
 
   // Filter State
@@ -119,7 +120,8 @@ export default function AdminPage() {
       official_url: '',
       locationsInput: '',
       status: '진행중',
-      is_visible: true // Default to true when creating manually? Or false? Let's say true for manual creation.
+      is_visible: true,
+      is_new: false
     });
     setEditingId(null);
   };
@@ -137,7 +139,8 @@ export default function AdminPage() {
       official_url: event.official_url || '',
       locationsInput: event.locations ? event.locations.join(', ') : '',
       status: event.status || '진행중',
-      is_visible: event.is_visible ?? false
+      is_visible: event.is_visible ?? false,
+      is_new: event.is_new ?? false
     });
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
   };
@@ -200,7 +203,9 @@ export default function AdminPage() {
       official_url: formData.official_url,
       locations: locationsArray,
       status: formData.status,
-      is_visible: formData.is_visible
+      is_visible: formData.is_visible,
+      // If visible is set to true, clear is_new. Otherwise keep current state (or default false).
+      is_new: formData.is_visible ? false : formData.is_new
     };
 
     let result;
@@ -476,6 +481,11 @@ export default function AdminPage() {
                                 {!event.is_visible && (
                                     <span className="text-[10px] px-1.5 py-0.5 bg-red-950 border border-red-900 text-red-500 rounded font-bold uppercase">
                                         비공개
+                                    </span>
+                                )}
+                                {event.is_new && (
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-blue-500 text-white rounded font-bold uppercase animate-pulse">
+                                        NEW
                                     </span>
                                 )}
                             </div>

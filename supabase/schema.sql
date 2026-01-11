@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS events (
     official_url TEXT,
     status TEXT DEFAULT '진행중', -- '진행중', '마감임박', '종료'
     is_visible BOOLEAN DEFAULT FALSE, -- Human-in-the-loop: Default to false until approved
+    is_new BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 

@@ -359,7 +359,8 @@ async function saveToSupabase(event: EnrichedEvent) {
         locations: event.locations,
         official_url: event.detailUrl,
         status: '진행중',
-        is_visible: false // Hidden by default, requires manual approval
+        is_visible: false, // Hidden by default, requires manual approval
+        is_new: true // Mark as new for admin attention
     });
     if (error) console.error('Error saving to Supabase:', error);
     else console.log(`Saved "${event.title}" to Supabase.`);
