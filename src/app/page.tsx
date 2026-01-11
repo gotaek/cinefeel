@@ -41,7 +41,8 @@ export default function Home() {
           // Note: In a real app we would align types perfectly
           const mappedEvents: Event[] = data.map((item: {
              id: number;
-             event_title: string;
+             event_title?: string; // Optional because it might not exist in old schema
+             title?: string; // Fallback
              cinemas: { name: string } | null; // Joined table
              goods_type: string;
              period: string;
@@ -51,14 +52,14 @@ export default function Home() {
              status: string;
           }) => ({
             id: item.id,
-            title: item.event_title, // Changed from item.title to item.event_title
+            title: item.event_title || item.title || 'Untitled Event', // Fallback to item.title if event_title is missing (migration issue)
             cinema: item.cinemas?.name || 'Unknown',
-            goodsType: item.goods_type,
-            period: item.period,
-            imageUrl: item.image_url,
+            goodsType: item.goods_type || 'Unknown',
+            period: item.period || '', // Ensure string
+            imageUrl: item.image_url || '',
             locations: item.locations || [],
-            officialUrl: item.official_url,
-            status: item.status
+            officialUrl: item.official_url || '',
+            status: item.status || '진행중'
           }));
           setEvents(mappedEvents);
           setIsLiveMode(true);
@@ -77,6 +78,7 @@ export default function Home() {
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => {
       const getStartDate = (period: string) => {
+        if (!period) return 0;
         // Extract first date "2024.03.01" from "2024.03.01 ~ ..."
         const match = period.match(/(\d{4}\.\d{2}\.\d{2})/);
         if (match) {

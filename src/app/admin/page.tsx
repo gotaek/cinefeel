@@ -98,15 +98,15 @@ export default function AdminPage() {
   const handleEdit = (event: any) => {
     setEditingId(event.id);
     setFormData({
-      event_title: event.event_title,
+      event_title: event.event_title || event.title || '',
       movie_title: event.movie_title || '',
-      cinema_id: event.cinema_id,
-      goods_type: event.goods_type,
-      period: event.period,
-      image_url: event.image_url,
-      official_url: event.official_url,
+      cinema_id: event.cinema_id || 1,
+      goods_type: event.goods_type || '',
+      period: event.period || '',
+      image_url: event.image_url || '',
+      official_url: event.official_url || '',
       locationsInput: event.locations ? event.locations.join(', ') : '',
-      status: event.status
+      status: event.status || '진행중'
     });
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
   };
@@ -397,7 +397,7 @@ export default function AdminPage() {
                       <CinemaBadge cinema={event.cinemas?.name} />
                       <span className="text-xs text-red-400 font-bold uppercase">{event.goods_type}</span>
                     </div>
-                    <h3 className="font-bold text-lg truncate mb-1">{event.event_title}</h3>
+                    <h3 className="font-bold text-lg truncate mb-1">{event.event_title || event.title}</h3>
                     <p className="text-xs text-neutral-500 mb-2">{event.period}</p>
                     <div className="flex gap-1 overflow-hidden">
                        {event.locations?.slice(0, 3).map((loc: string, i: number) => (

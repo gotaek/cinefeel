@@ -11,6 +11,7 @@ interface EventCardProps {
 export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   // Simple client-side check for event expiration
   const isEnded = React.useMemo(() => {
+    if (!event.period) return false;
     // 1. Check if status says ended
     if (event.status === '종료') return true;
     
@@ -45,7 +46,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
 
   // Check if today is within period (Active)
   const isActive = React.useMemo(() => {
-    if (isEnded) return false;
+    if (isEnded || !event.period) return false;
     
     // Parse start date
     // "2024.02.28 ~ ..."
@@ -62,9 +63,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
             start.setHours(0, 0, 0, 0); // Start of day
             const now = new Date();
             
-            // If start date is in future, it's not active yet (it's upcoming)
-            // But user said "dates within period". 
-            // Usually "Active" means started and not ended.
             return now >= start;
         }
     }
