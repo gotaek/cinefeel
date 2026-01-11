@@ -56,7 +56,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, closeModal }) => 
                 
                 {/* Mobile Ambient Background Layer (Visible during overscroll/rubber-banding) */}
                 {/* Fixed height ensures it only shows when pulling down from top, not when overscrolling bottom */}
-                <div className="absolute top-0 left-0 right-0 h-[500px] md:hidden overflow-hidden pointer-events-none">
+                <div className="absolute top-0 left-0 right-0 h-[300px] md:hidden overflow-hidden pointer-events-none">
                     <img 
                         src={event.imageUrl} 
                         className="w-full h-full object-cover blur-2xl opacity-60 scale-125" 
@@ -86,7 +86,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, closeModal }) => 
                     </div>
 
                     {/* Content Area (Solid BG needed to cover ambient blur as we scroll up) */}
-                    <div className="relative bg-neutral-900 p-6 md:p-12 min-h-full">
+                    <div className="relative bg-neutral-900 p-6 md:p-12 min-h-[60vh]">
                         <div className="mb-6 md:mb-8">
                             <div className="flex items-center gap-3 mb-3">
                             <CinemaBadge cinema={event.cinema} />
