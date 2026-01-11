@@ -55,7 +55,8 @@ export const EventModal: React.FC<EventModalProps> = ({ event, closeModal }) => 
             <div className="relative w-full md:w-[60%] h-full bg-neutral-900">
                 
                 {/* Mobile Ambient Background Layer (Visible during overscroll/rubber-banding) */}
-                <div className="absolute inset-0 md:hidden overflow-hidden">
+                {/* Fixed height ensures it only shows when pulling down from top, not when overscrolling bottom */}
+                <div className="absolute top-0 left-0 right-0 h-[500px] md:hidden overflow-hidden pointer-events-none">
                     <img 
                         src={event.imageUrl} 
                         className="w-full h-full object-cover blur-2xl opacity-60 scale-125" 
@@ -63,6 +64,8 @@ export const EventModal: React.FC<EventModalProps> = ({ event, closeModal }) => 
                         aria-hidden="true"
                     />
                     <div className="absolute inset-0 bg-black/20"></div>
+                    {/* Fade out at the bottom of the blur layer to blend smoothly if ever revealed */}
+                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-neutral-900 to-transparent"></div>
                 </div>
 
                 {/* Scrollable Container (Foreground) */}
