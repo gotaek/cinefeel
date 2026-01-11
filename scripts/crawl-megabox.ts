@@ -354,7 +354,49 @@ async function saveToSheets(event: EnrichedEvent) {
   }
 }
 
+/**
+ * 날짜 범위를 분석하여 이벤트 상태 결정
+ * @param dateRange "YYYY.MM.DD ~ YYYY.MM.DD" 형식
+ */
+function determineStatus(dateRange: string): '예정' | '진행중' | '종료' {
+    try {
+        if (!dateRange || !dateRange.includes('~')) return '진행중'; // Default
+
+        const [startStr, endStr] = dateRange.split('~').map(s => s.trim());
+        
+        // 날짜 파싱 (YYYY.MM.DD -> Date 객체)
+        const parseDate = (str: string) => {
+            const parts = str.split('.');
+            if (parts.length !== 3) return null;
+            return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        };
+
+        const startDate = parseDate(startStr);
+        const endDate = parseDate(endStr);
+        
+        if (!startDate || !endDate) return '진행중';
+
+        // 오늘 날짜 (시간 제거)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (startDate > today) {
+            return '예정';
+        } else if (endDate < today) {
+            return '종료';
+        } else {
+            return '진행중';
+        }
+    } catch (e) {
+        console.error('Date parse error:', e);
+        return '진행중';
+    }
+}
+
 async function saveToSupabase(event: EnrichedEvent) {
+    const calculatedStatus = determineStatus(event.dateRange || '');
+    console.log(`   📅 Status calculated: ${calculatedStatus} (Date: ${event.dateRange})`);
+
     const { error } = await supabase.from('events').insert({
         event_title: event.title, // Maps to renamed column
         movie_title: event.movieTitle, // New column
@@ -364,7 +406,7 @@ async function saveToSupabase(event: EnrichedEvent) {
         image_url: event.posterPath, 
         locations: event.locations,
         official_url: event.detailUrl,
-        status: '진행중',
+        status: calculatedStatus,
         is_visible: false, // Hidden by default, requires manual approval
         is_new: true // Mark as new for admin attention
     });
