@@ -19,6 +19,12 @@ export default function Home() {
   const [isLiveMode, setIsLiveMode] = useState(false);
 
   useEffect(() => {
+    // Force scroll to top on refresh
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+
     // Attempt to fetch from Supabase if configured
     const fetchEvents = async () => {
       if (!isSupabaseConfigured() || !supabase) return;
@@ -141,7 +147,7 @@ export default function Home() {
         setSearchQuery={setSearchQuery} 
       />
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8 min-h-[80vh]">
         <CinemaFilter filter={filter} setFilter={setFilter} />
 
         <div className="mb-8 flex items-end justify-between">
