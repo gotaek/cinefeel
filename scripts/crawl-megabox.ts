@@ -539,13 +539,35 @@ async function processDetail(browser: Browser, url: string): Promise<string | nu
     // const key = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY;
     // console.log(`🔑 TMDB Key Debug: Value="${key ? key.substring(0, 5) + '...' : 'undefined'}", Length=${key?.length}`);
 
-    // 3. Filter New Events (Keyword "증정" or "굿즈" AND Not in DB)
+    // 3. Filter New Events (Keyword "증정" or "굿즈" AND Date Check AND Not in DB)
     const targetEvents = allEvents.filter(e => {
         // A. Keyword Filter
         const hasKeyword = ['증정', '굿즈'].some(keyword => e.title.includes(keyword));
         if (!hasKeyword) return false;
 
-        // B. DB Helper Flag
+        // B. Date Filter - Only process events that haven't ended yet
+        if (e.dateRange && e.dateRange.includes('~')) {
+            try {
+                const [, endStr] = e.dateRange.split('~').map(s => s.trim());
+                const parts = endStr.split('.');
+                if (parts.length === 3) {
+                    const endDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    // Skip events that have already ended
+                    if (endDate < today) {
+                        console.log(`   ⏭️  Skipping ended event: "${e.title}" (ended: ${endStr})`);
+                        return false;
+                    }
+                }
+            } catch {
+                console.warn(`   ⚠️  Date parsing failed for "${e.title}": ${e.dateRange}`);
+                // Continue processing if date parsing fails
+            }
+        }
+
+        // C. DB Helper Flag
         // Verify if it's already in our set of existing URLs.
         if (existingUrls.has(e.detailUrl)) {
             // Already exists

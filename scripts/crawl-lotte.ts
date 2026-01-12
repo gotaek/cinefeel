@@ -198,9 +198,35 @@ async function processDetail(browser: Browser, url: string): Promise<string | nu
   const allEvents = await crawlLotteList();
   
   const targetEvents = allEvents.filter(e => {
+    // A. Keyword Filter
     const keywords = ['증정', '스페셜', '아트카드', '시그니처'];
     const hasKeyword = keywords.some(k => e.title.includes(k));
-    return hasKeyword && !existingUrls.has(e.detailUrl);
+    if (!hasKeyword) return false;
+
+    // B. Date Filter - Only process events that haven't ended yet
+    if (e.dateRange && e.dateRange.includes('~')) {
+      try {
+        const [, endStr] = e.dateRange.split('~').map(s => s.trim());
+        const parts = endStr.split('.');
+        if (parts.length === 3) {
+          const endDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          // Skip events that have already ended
+          if (endDate < today) {
+            console.log(`   ⏭️  Skipping ended event: "${e.title}" (ended: ${endStr})`);
+            return false;
+          }
+        }
+      } catch {
+        console.warn(`   ⚠️  Date parsing failed for "${e.title}": ${e.dateRange}`);
+        // Continue processing if date parsing fails
+      }
+    }
+
+    // C. DB Check
+    return !existingUrls.has(e.detailUrl);
   });
 
   console.log(`Found ${targetEvents.length} events to process.`);
