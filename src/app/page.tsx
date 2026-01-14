@@ -72,13 +72,15 @@ export default function Home() {
     fetchEvents();
   }, []);
 
-  // Sort events: Latest start date first
+  // Sort events:
+  // 1. Group by Status: Active -> Upcoming -> Ended
+  // 2. Sort by Date: Ascending (Earliest start date first)
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => {
       // Helper to parse start date
       const getStartDate = (period: string) => {
-        if (!period) return 0;
-        const match = period.match(/(\d{4}\.\d{2}\.\d{2})/);
+        if (!period) return 9999999999999;
+        const match = period.match(/(\d{4}\.\d{1,2}\.\d{1,2})/);
         if (match) {
           const [y, m, d] = match[0].split('.').map(Number);
           return new Date(y, m - 1, d).getTime();
@@ -96,7 +98,8 @@ export default function Home() {
       // 2: Ended
       const getStatusPriority = (event: Event, start: number) => {
         if (event.status === '종료') return 2;
-        
+        if (event.status === '예정') return 1; 
+
         // Check if ended by date
         if (event.period && event.period.includes('~')) {
             const endDateString = event.period.split('~')[1]?.trim();
@@ -114,7 +117,15 @@ export default function Home() {
             }
         }
 
-        if (now < start) return 1; // Upcoming
+        if (now < start) {
+           // If Start Date is in the future, normally it's Upcoming (1)
+           // BUT if the date is "Invalid/Far Future" (9999...) AND status is NOT Explicitly '예정'
+           // We assume it's an Active event with missing date info -> Keep in Active (0)
+           if (start > 9000000000000 && event.status !== '예정') {
+             return 0;
+           }
+           return 1; // Upcoming
+        }
         return 0; // Active
       };
 
@@ -126,7 +137,7 @@ export default function Home() {
         return aPriority - bPriority;
       }
 
-      // 2. Sort by Start Date (Earliest first)
+      // 2. Sort by Start Date (Earliest first) - User explicit request
       return aStart - bStart;
     });
   }, [events]);
