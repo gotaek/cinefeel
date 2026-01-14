@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Calendar } from 'lucide-react';
+import { Tag, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import { Event } from '@/types';
 import { CinemaBadge } from '@/components/ui/CinemaBadge';
@@ -7,9 +7,10 @@ import { CinemaBadge } from '@/components/ui/CinemaBadge';
 interface EventCardProps {
   event: Event;
   onClick: (event: Event) => void;
+  className?: string;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, onClick, className = '' }) => {
   // Simple client-side check for event expiration
   const isEnded = React.useMemo(() => {
     if (!event.period) return false;
@@ -73,7 +74,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   return (
     <div 
       onClick={() => onClick(event)}
-      className="group cursor-pointer"
+      className={`group cursor-pointer ${className}`}
     >
       <div className={`relative aspect-[2/3] overflow-hidden rounded-2xl bg-neutral-900 border shadow-lg transition-all duration-300 
         ${isEnded ? 'grayscale opacity-60 border-neutral-800' : 'border-neutral-800 group-hover:border-red-500/50'}
@@ -102,21 +103,66 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
               종료됨
             </div>
           )}
-          {isActive && !isEnded && event.status !== '마감임박' && (
-            <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md border border-green-500/30 text-green-400 text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
-              진행중
-            </div>
-          )}
-          {event.status === '예정' && !isEnded && !isActive && (
-            <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md border border-blue-500/30 text-blue-400 text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-              예정
-            </div>
-          )}
+          {/* D-Day Logic */}
+          {(() => {
+            if (isEnded || !event.period) return null;
+
+            // Calculate Diff
+            const getDiffDays = () => {
+                 const parts = event.period.split('~');
+                 const startDateString = parts[0].trim();
+                 // Handle YYYY.MM.DD or YYYY.M.D
+                 const match = startDateString.match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/);
+                 if (match) {
+                    const y = parseInt(match[1]);
+                    const m = parseInt(match[2]) - 1;
+                    const d = parseInt(match[3]);
+                    
+                    const start = new Date(y, m, d);
+                    start.setHours(0, 0, 0, 0);
+                    
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    
+                    const diffTime = start.getTime() - now.getTime();
+                    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                 }
+                 return null;
+            };
+
+            const diff = getDiffDays();
+            
+            // 1. D-Day (Today) - Premium Red Pulse
+            if (diff === 0) {
+                return (
+                    <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-red-500/50 text-red-500 text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping absolute opacity-75"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 relative"></div>
+                      D-Day
+                    </div>
+                );
+            }
+
+            // 2. Active (Started in past) - No Badge (Clean UI)
+            if (isActive && diff !== null && diff < 0 && event.status !== '마감임박') {
+                return null;
+            }
+
+            // 3. Upcoming (Future) - D-Minus or Just "Upcoming" if calc fails
+            if (event.status === '예정' || (diff !== null && diff > 0)) {
+                return (
+                    <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md border border-blue-500/30 text-blue-400 text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                      {diff !== null && diff > 0 ? `D-${diff}` : '예정'}
+                    </div>
+                );
+            }
+
+            return null;
+          })()}
         </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-12 pb-6 px-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
           <p className="text-xs text-red-400 font-bold mb-1 uppercase tracking-wider italic flex items-center gap-1 drop-shadow-md">
-            <Sparkles className="w-3 h-3" /> {event.goodsType}
+            <Tag className="w-3 h-3" /> {event.goodsType}
           </p>
           <h3 className="text-sm font-bold leading-tight mb-1 break-words text-white drop-shadow-md">{event.title}</h3>
           {event.period && (

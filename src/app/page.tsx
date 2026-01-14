@@ -5,6 +5,9 @@ import { Header } from '@/components/Header';
 import { CinemaFilter } from '@/components/CinemaFilter';
 import { EventCard } from '@/components/EventCard';
 import { EventModal } from '@/components/EventModal';
+import { TrendingSection } from '@/components/TrendingSection';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { ScrollToTop } from '@/components/ScrollToTop';
 import { Event } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
@@ -159,36 +162,55 @@ export default function Home() {
       />
 
       <main className="max-w-6xl mx-auto px-4 py-8 min-h-[80vh]">
-        <CinemaFilter filter={filter} setFilter={setFilter} />
+        {/* Trending Section (D-Day ~ D-3) */}
+        <TrendingSection events={events} onEventClick={setSelectedEvent} isLoading={isLoading} />
 
-        <div className="mb-8 flex items-end justify-between">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-                <div className="flex items-center gap-2 text-red-500">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                  <span className="text-xs font-bold uppercase tracking-widest">Now Showing</span>
-                </div>
-            </div>
+
             <h2 className="text-3xl font-bold italic tracking-tight uppercase">
-              Live Goods Feed
+              Cinema Goods
               {isLoading && <span className="ml-4 text-sm font-normal text-neutral-500 animate-pulse">Syncing...</span>}
             </h2>
-            <p className="text-neutral-400 mt-1">영화관별 공식 굿즈 정보를 확인하세요.</p>
+            <p className="text-neutral-400 mt-1">영화관 3사의 굿즈를 한눈에 모아보세요.</p>
           </div>
-
+          
+          <CinemaFilter 
+            filter={filter} 
+            setFilter={setFilter} 
+            className="w-full md:w-auto mb-0 justify-start md:justify-end" 
+          />
         </div>
 
         {/* Poster Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {filteredEvents.map((event) => (
-            <EventCard 
-              key={event.id} 
-              event={event} 
-              onClick={setSelectedEvent} 
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : filteredEvents.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {filteredEvents.map((event) => (
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                onClick={setSelectedEvent} 
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 text-neutral-500">
+            <p>검색 결과가 없습니다.</p>
+          </div>
+        )}
       </main>
+
+      <ScrollToTop />
 
       {/* Detail Modal */}
       {selectedEvent && (
