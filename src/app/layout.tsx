@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cinefeel - Cinema Goods Events",
+  title: "MOG - Cinema Goods Events",
   description: "Collect and track cinema goods events with AI-powered insights.",
 };
 

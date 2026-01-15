@@ -117,17 +117,17 @@ async function crawlCGVList(page: any): Promise<ScrapedEvent[]> {
     page.on('console', (msg: any) => console.log('BROWSER:', msg.text()));
 
     // Scrape events
-    console.log('Scraping event list...');
-    await wait(5000); 
-    const html = await page.content();
-    fs.writeFileSync('debug_cgv.html', html);
-    console.log('Saved debug_cgv.html');
-    await page.screenshot({ path: 'debug_cgv_at_scrape.png' });
+    // console.log('Scraping event list...');
+    // await wait(5000); 
+    // const html = await page.content();
+    // fs.writeFileSync('debug_cgv.html', html);
+    // console.log('Saved debug_cgv.html');
+    // await page.screenshot({ path: 'debug_cgv_at_scrape.png' });
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const events = await page.evaluate(function(t: number) {
+    const events = await page.evaluate((t: number) => {
         try {
             const todayDate = new Date(t);
             const results: any[] = [];
@@ -168,16 +168,17 @@ async function crawlCGVList(page: any): Promise<ScrapedEvent[]> {
                     const dates = dateRange.match(/(\d{2})\.(\d{2})\.(\d{2})/g);
                     
                     if (dates && dates.length > 0) {
-                        const parseToDate = (str: string) => {
-                           const parts = str.split('.');
-                           return new Date(2000 + parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                        };
-
-                        const startDate = parseToDate(dates[0]);
-                        const endDate = dates.length > 1 ? parseToDate(dates[1]) : startDate;
+                        // Inline parsing logic to avoid inner function artifacts
+                        const parseParts0 = dates[0].split('.');
+                        const startDate = new Date(2000 + parseInt(parseParts0[0]), parseInt(parseParts0[1]) - 1, parseInt(parseParts0[2]));
+                        
+                        let endDate = startDate;
+                        if (dates.length > 1) {
+                             const parseParts1 = dates[1].split('.');
+                             endDate = new Date(2000 + parseInt(parseParts1[0]), parseInt(parseParts1[1]) - 1, parseInt(parseParts1[2]));
+                        }
                         
                         // Logic: Include if it ends today or in future (Ongoing or Upcoming)
-                        // Or if undefined end, check start date (conservative)
                         
                         // Reset time to midnight for accurate comparison
                         startDate.setHours(0,0,0,0);
@@ -353,43 +354,123 @@ async function saveToSupabase(event: EnrichedEvent) {
 }
 
 async function processEventByClick(page: any, event: ScrapedEvent): Promise<string | null> {
+  const imagesDir = path.join(__dirname, 'crawled_images');
+  if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
+  const screenshotPath = path.join(imagesDir, `cgv_${Date.now()}.png`);
+
+  let popup: any = null;
+
   try {
     console.log(`Navigating to detail by clicking: ${event.title}`);
     
-    // Find the image with the specific alt text and click its parent link
+    // Look for the image
     const eventImg = page.locator(`img[alt="${event.title}"]`);
     await eventImg.first().waitFor({ timeout: 5000 });
+    
+    // Prepare to catch potential popup (new tab)
+    // We race a short timeout against the popup event because we don't know if it will open one.
+    // However, the cleanest way is `waitForEvent` with a timeout, started BEFORE click.
+    const popupPromise = page.context().waitForEvent('page', { timeout: 5000 }).catch(() => null);
+    
     await eventImg.first().click({ force: true });
     
-    await page.waitForLoadState('networkidle');
+    popup = await popupPromise;
+    const targetPage = popup || page;
+
+    // Be careful: if it's the same page, we wait for nav. If popup, we wait for popup load.
+    if (!popup) {
+      await page.waitForLoadState('networkidle');
+    } else {
+      console.log('   ✨ New tab detected. Switching context...');
+      await popup.waitForLoadState('networkidle');
+      // Fix viewport for popup usually
+      await popup.setViewportSize({ width: 1440, height: 1200 }); 
+    }
+
     await wait(2000);
 
-    // Handle any renewal landing pages or popups on the detail page
-    await ensureMainView(page);
-    
-    await wait(2000);
-    const imagesDir = path.join(__dirname, 'crawled_images');
-    if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
-    const screenshotPath = path.join(imagesDir, `cgv_${Date.now()}.png`);
-    
-    await page.screenshot({ path: screenshotPath, fullPage: true });
-    
-    // Go back to the list
-    console.log('Going back to list...');
-    await page.goBack();
-    await page.waitForLoadState('networkidle');
-    await wait(3000);
+    // Handle renewal/popups on the TARGET page
+    await ensureMainView(targetPage);
+    await wait(1000);
 
-    // Re-verify we are in the Movie tab (CGV often resets state)
-    await reNavigateToMovieTab(page);
+    // Scroll Logic on TARGET page
+    console.log('   📜 Scrolling to load all images...');
+    await targetPage.evaluate(async () => {
+        await new Promise<void>((resolve) => {
+            let totalHeight = 0;
+            const distance = 100;
+            const timer = setInterval(() => {
+                const scrollHeight = document.body.scrollHeight;
+                window.scrollBy(0, distance);
+                totalHeight += distance;
+
+                // Stop if we reach bottom or run for too long (safety)
+                if (totalHeight >= scrollHeight || totalHeight > 15000) {
+                    clearInterval(timer);
+                    resolve();
+                }
+            }, 50);
+        });
+    });
+    
+    await wait(1000);
+
+    // Capture content
+    const contentSelector = '#contents'; 
+    const contentLocator = targetPage.locator(contentSelector).first(); 
+
+    if (await contentLocator.isVisible()) {
+         console.log(`   📸 Capturing specific event area (${contentSelector})...`);
+         await contentLocator.screenshot({ path: screenshotPath });
+    } else {
+         console.log('   ⚠️ Specific image not found, falling back to full page...');
+         // Try a different generic selector fallback before fullPage
+         // CGV Classic: #ctl00_PlaceHolderContent_Section_Event_Detail
+         const fallback = targetPage.locator('#ctl00_PlaceHolderContent_Section_Event_Detail');
+         if (await fallback.isVisible()) {
+             await fallback.screenshot({ path: screenshotPath });
+         } else {
+             await targetPage.screenshot({ path: screenshotPath, fullPage: true });
+         }
+    }
+
+    // Cleanup / Return
+    if (popup) {
+        console.log('   ❌ Closing popup...');
+        await popup.close();
+    } else {
+        console.log('   🔙 Going back to list...');
+        await page.goBack();
+        await page.waitForLoadState('networkidle');
+        await wait(2000);
+        await reNavigateToMovieTab(page);
+    }
 
     return screenshotPath;
+
   } catch (e: any) { 
-    console.error(`Error processing ${event.title} via click:`, e.message);
-    // Try to go back anyway if we failed
-    try { await page.goBack(); } catch {}
+    console.error(`Error processing ${event.title}:`, e.message);
+    
+    // Cleanup Screenshot 
+    try {
+        if (fs.existsSync(screenshotPath)) {
+            fs.unlinkSync(screenshotPath);
+            console.log(`   🗑️  Deleted partial screenshot: ${screenshotPath}`);
+        }
+    } catch {}
+
+    // Cleanup Page State
+    try {
+        if (popup && notClosed(popup)) await popup.close();
+        else if (!popup) await page.goBack();
+    } catch {}
+    
     return null; 
   }
+}
+
+function notClosed(page: any) {
+    try { return !page.isClosed(); } catch { return false; }
 }
 
 (async () => {

@@ -18,7 +18,7 @@ export const AdminHeader: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <ShieldCheck className="text-red-500 w-6 h-6 group-hover:scale-110 transition-transform" />
-          <h1 className="text-lg font-bold tracking-tight text-white">Cinefeel Admin</h1>
+          <h1 className="text-lg font-bold tracking-tight text-white">MOG Admin</h1>
         </Link>
         
         <button 

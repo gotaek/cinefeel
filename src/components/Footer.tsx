@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
                 
                 <div className="space-y-4 max-w-md">
                     <p className="text-xs text-neutral-500 leading-relaxed">
-                        본 사이트(Cinefeel)는 영화관별 공식 굿즈 정보를 모아 보여주는 정보 제공 서비스입니다.
+                        본 사이트(MOG)는 영화관별 공식 굿즈 정보를 모아 보여주는 정보 제공 서비스입니다.
                         <br />
                         사이트 내 사용된 모든 영화관 로고(CGV, 롯데시네마, 메가박스 등) 및 영화 포스터 이미지의 저작권은
                         각 배급사 및 해당 기업에 있습니다.
@@ -33,7 +33,7 @@ export const Footer: React.FC = () => {
             </div>
             <div className="max-w-6xl mx-auto mt-8 pt-8 border-t border-neutral-900 text-center">
                  <p className="text-[10px] text-neutral-700 font-mono">
-                    © 2024 CINEFEEL. All rights reserved.
+                    © 2024 MOG. All rights reserved.
                 </p>
             </div>
         </footer>
