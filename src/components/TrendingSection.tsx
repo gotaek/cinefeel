@@ -68,7 +68,10 @@ export const TrendingSection: React.FC<TrendingSectionProps> = ({ events, onEven
 
   const scroll = (direction: 'left' | 'right') => {
       if (scrollContainerRef.current) {
-          const scrollAmount = 300; // Approx one card width + gap
+          // Scroll by ~80% of the screen width to always show a "peek" of the next set
+          // This follows standard UX patterns for horizontal lists (Netflix/AppStore style)
+          const scrollAmount = scrollContainerRef.current.clientWidth * 0.8;
+          
           scrollContainerRef.current.scrollBy({
               left: direction === 'left' ? -scrollAmount : scrollAmount,
               behavior: 'smooth'
@@ -93,13 +96,13 @@ export const TrendingSection: React.FC<TrendingSectionProps> = ({ events, onEven
         {/* Background Atmosphere */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-4xl bg-red-600/5 blur-[100px] rounded-full pointer-events-none"></div>
 
-        <div className="flex items-center gap-2 mb-4 px-2">
+        <div className="flex items-center gap-3 mb-6 px-2">
             <div className="relative flex h-3 w-3">
               <span className="animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Trending Now</h2>
-            <span className="text-xs font-medium text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Trending Now</h2>
+            <span className="text-xs font-medium text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20 mt-1">
                 이번 주 놓치면 안 될 굿즈
             </span>
         </div>
@@ -130,7 +133,7 @@ export const TrendingSection: React.FC<TrendingSectionProps> = ({ events, onEven
             <div 
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex overflow-x-auto py-12 px-4 scroll-smooth snap-x snap-mandatory no-scrollbar items-start gap-4 md:gap-6 relative z-0"
+                className="flex overflow-x-auto py-8 px-4 scroll-smooth snap-x snap-mandatory no-scrollbar items-start gap-4 md:gap-6 relative z-0"
             >
                 {isLoading ? (
                     // Skeleton Loading

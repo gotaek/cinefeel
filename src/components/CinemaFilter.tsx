@@ -15,9 +15,9 @@ export const CinemaFilter: React.FC<CinemaFilterProps> = ({ filter, setFilter, c
           <button
             key={tab}
             onClick={() => setFilter(tab)}
-            className={`flex-1 md:flex-none px-2 md:px-6 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all whitespace-nowrap ${
+            className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all whitespace-nowrap ${
               filter === tab 
-              ? 'bg-neutral-800 text-white shadow-md' 
+              ? 'bg-neutral-800 text-white shadow-sm' 
               : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >

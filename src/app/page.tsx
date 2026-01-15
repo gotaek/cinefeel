@@ -168,7 +168,7 @@ export default function Home() {
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
 
-            <h2 className="text-3xl font-bold italic tracking-tight uppercase">
+            <h2 className="text-2xl font-bold tracking-tight">
               Cinema Goods
               {isLoading && <span className="ml-4 text-sm font-normal text-neutral-500 animate-pulse">Syncing...</span>}
             </h2>
