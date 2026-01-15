@@ -1,0 +1,20 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Concept D (Final Polish): The Ticket M -->
+    <!-- Red color: #EF4444 (Cinefeel Theme Red) -->
+    <!-- Feature: Top-center notch added to match side notches -->
+    
+    <g transform="translate(100, 100)">
+        <path fill="#EF4444" d="
+            M0,0 
+            L80,0 
+            A20,20 0 0,0 120,0 
+            L200,0 
+            L200,70 A20,20 0 0,0 200,130 
+            L200,200 
+            L140,200 L140,110 L60,110 L60,200 
+            L0,200 
+            L0,130 A20,20 0 0,0 0,70 
+            L0,0 Z
+        "/>
+    </g>
+</svg>

@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "next lint",
-    "crawl": "tsx scripts/crawl-megabox.ts",
+    "crawl:megabox": "tsx scripts/crawl-megabox.ts",
+    "crawl:lotte": "tsx scripts/crawl-lotte.ts",
+    "crawl:cgv": "tsx scripts/crawl-cgv.ts",
+    "crawl:all": "npm run crawl:megabox && npm run crawl:lotte && npm run crawl:cgv",
     "update-status": "tsx scripts/update-status.ts"
   },
   "dependencies": {

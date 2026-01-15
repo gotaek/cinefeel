@@ -8,6 +8,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { CGV_LOCATIONS } from './data/cinema-locations';
 
 dotenv.config({ path: '.env.local' });
 
@@ -156,16 +157,35 @@ async function crawlCGVList(page: any): Promise<ScrapedEvent[]> {
                     }
                 }
 
-                // Date range
+                // Date range parsing (Robust for "YY.MM.DD ~ YY.MM.DD")
                 const periodEl = card.querySelector('[class*="period"], [class*="subText"]');
                 const dateRange = periodEl ? (periodEl as HTMLElement).innerText : '';
                 
                 if (dateRange) {
                     let isUpcoming = false;
-                    const match = dateRange.match(/(\d{2})\.(\d{2})\.(\d{2})/);
-                    if (match) {
-                        const sd = new Date(2000 + parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
-                        if (sd > todayDate) isUpcoming = true;
+                    // Regex to capture start and optional end date
+                    // Support: "24.01.01 ~ 24.01.31" or "24.01.01~24.01.31"
+                    const dates = dateRange.match(/(\d{2})\.(\d{2})\.(\d{2})/g);
+                    
+                    if (dates && dates.length > 0) {
+                        const parseToDate = (str: string) => {
+                           const parts = str.split('.');
+                           return new Date(2000 + parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                        };
+
+                        const startDate = parseToDate(dates[0]);
+                        const endDate = dates.length > 1 ? parseToDate(dates[1]) : startDate;
+                        
+                        // Logic: Include if it ends today or in future (Ongoing or Upcoming)
+                        // Or if undefined end, check start date (conservative)
+                        
+                        // Reset time to midnight for accurate comparison
+                        startDate.setHours(0,0,0,0);
+                        endDate.setHours(23,59,59,999);
+
+                        if (endDate >= todayDate) {
+                             isUpcoming = true; // Renamed concept: "Active" (Future or Ongoing)
+                        }
                     }
 
                     results.push({
@@ -252,6 +272,22 @@ async function analyzeImageWithGemini(imagePath: string): Promise<{ movieTitle: 
   "goodsType": "상품 종류",
   "locations": ["지점1", "지점2"] 또는 ["All"] 또는 []
 }
+
+/*
+----------------------------------------
+[지점 리스트 (참고용 Master Data)]
+아래 리스트에 있는 지점명만 사용하세요. 없는 지점이나 오타를 생성하지 마세요.
+${CGV_LOCATIONS.join(', ')}
+----------------------------------------
+*/
+
+[분석 단계 (Chain of Thought)]
+1. 이미지 내 텍스트를 모두 읽으세요.
+2. '진행 지점'과 '제외 지점(진행하지 않는 지점, 미진행)'을 명확히 구분하세요. 특히 텍스트가 작게 적힌 '제외 지점' 목록을 주의하세요.
+3. '제외 지점'에 포함된 곳은 절대 결과에 넣지 마세요.
+/* 4. 추출된 지점들을 위 [지점 리스트]와 대조하여 정확한 명칭으로 변환하세요. */
+5. 최종 JSON을 생성하세요.
+
 `;
         const result = await model.generateContent([
           prompt,

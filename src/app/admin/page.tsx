@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus, Loader2, AlertCircle, Search, Image as ImageIcon, X, Pencil, RotateCcw } from 'lucide-react';
+import { Trash2, Plus, Loader2, AlertCircle, Search, Image as ImageIcon, X, Pencil, RotateCcw, Sparkles } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { AdminHeader } from '@/components/AdminHeader';
 import { CinemaBadge } from '@/components/ui/CinemaBadge';
@@ -269,21 +269,21 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col">
       <div className="shrink-0">
         <AdminHeader />
       </div>
 
-      <main className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 py-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         {message && (
           <div className={`p-4 mb-4 rounded-lg font-bold text-sm shrink-0 ${message.type === 'success' ? 'bg-green-900/50 text-green-300 border border-green-800' : 'bg-red-900/50 text-red-300 border border-red-800'}`}>
             {message.text}
           </div>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-8 h-full">
-          {/* Form Section - Independently Scrollable */}
-          <div className="lg:col-span-1 h-full overflow-y-auto pr-2 custom-scrollbar">
+        <div className="grid lg:grid-cols-3 gap-8 items-start">
+          {/* Form Section - Page Scroll */}
+          <div className="lg:col-span-1 pr-2">
             <div className={`bg-neutral-900 border ${editingId ? 'border-red-500/50' : 'border-neutral-800'} rounded-2xl p-6 transition-colors`}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
@@ -450,8 +450,8 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* List Section - Independently Scrollable */}
-          <div className="lg:col-span-2 space-y-4 h-full overflow-y-auto pr-2 custom-scrollbar flex flex-col">
+          {/* List Section - Sticky & Independently Scrollable */}
+          <div className="lg:col-span-2 space-y-4 sticky top-8 h-[calc(100vh-4rem)] overflow-y-auto pr-2 custom-scrollbar flex flex-col">
              <div className="sticky top-0 bg-neutral-950 z-20 pt-2 pb-4 space-y-3 shadow-xl shadow-neutral-950/50"> 
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold flex items-center gap-2">
@@ -494,7 +494,7 @@ export default function AdminPage() {
                 </div>
                 ) : (
                 sortedAdminEvents.map((event) => (
-                    <div key={event.id} className={`bg-neutral-900 border ${editingId === event.id ? 'border-blue-500/50 bg-blue-900/10' : !event.is_visible ? 'border-red-900/30 bg-red-900/5' : 'border-neutral-800 hover:border-neutral-700'} rounded-xl p-3 flex gap-3 transition-all group`}>
+                    <div key={event.id} className={`bg-neutral-900 border ${editingId === event.id ? 'border-blue-500/50 bg-blue-900/10' : !event.is_visible ? 'border-red-900/30 bg-red-900/5' : 'border-neutral-800 hover:border-neutral-700'} rounded-xl p-4 flex gap-4 transition-all group`}>
                     
                     {/* Image */}
                     <div className="w-14 h-20 bg-neutral-800 rounded shrink-0 overflow-hidden relative border border-neutral-800/50">
@@ -513,18 +513,18 @@ export default function AdminPage() {
                                         비공개
                                     </span>
                                 )}
-                                {event.is_new && (
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            toggleNewStatus(event.id, true);
-                                        }}
-                                        className="text-[10px] px-1.5 py-0.5 bg-blue-500 text-white rounded font-bold uppercase animate-pulse hover:bg-blue-600 transition-colors"
-                                        title="클릭하여 NEW 해제"
-                                    >
-                                        NEW
-                                    </button>
-                                )}
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleNewStatus(event.id, event.is_new);
+                                    }}
+                                    className={`transition-colors p-0.5 rounded-full hover:bg-neutral-800 ${event.is_new ? 'text-yellow-400' : 'text-neutral-700 hover:text-yellow-400'}`}
+                                    title={event.is_new ? "NEW 상태 해제" : "NEW 상태로 설정"}
+                                    aria-label={event.is_new ? "NEW 상태 해제" : "NEW 상태로 설정"}
+                                    aria-pressed={event.is_new}
+                                >
+                                    <Sparkles className={`w-3.5 h-3.5 ${event.is_new ? 'fill-yellow-400/50' : ''}`} />
+                                </button>
                             </div>
                             <h3 className={`font-bold text-base truncate leading-tight ${!event.is_visible ? 'text-neutral-400 line-through decoration-red-900/50' : 'text-neutral-100'}`}>
                                 {event.event_title || event.title}
@@ -563,7 +563,7 @@ export default function AdminPage() {
                                 onClick={() => handleDelete(event.id)}
                                 disabled={actionLoading}
                                 className={`p-1.5 rounded-md transition-colors ${!event.is_visible ? 'text-red-800 cursor-not-allowed opacity-50' : 'text-neutral-600 hover:text-red-400 hover:bg-neutral-800'}`}
-                                title="숨기기 (Soft Delete)"
+                                title="영구 삭제 (이 작업은 되돌릴 수 없습니다)"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>

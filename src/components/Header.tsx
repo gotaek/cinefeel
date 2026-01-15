@@ -11,8 +11,8 @@ export const Header: React.FC<HeaderProps> = ({ searchQuery, setSearchQuery }) =
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
            {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="CINEFEEL Logo" className="w-8 h-8 object-contain" />
-          <h1 className="text-xl font-black tracking-tighter uppercase italic">CINEFEEL</h1>
+          <img src="/mog-logo-final.svg" alt="MOG Logo" className="w-8 h-8 object-contain" />
+          <h1 className="text-xl font-black tracking-tighter uppercase italic">MOG</h1>
         </div>
         
         <div className="relative">
