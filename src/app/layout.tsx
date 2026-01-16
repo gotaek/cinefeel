@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
@@ -33,6 +34,11 @@ export default function RootLayout({
       >
         {children}
         <Footer />
+        <Script
+          defer
+          src='https://static.cloudflareinsights.com/beacon.min.js'
+          data-cf-beacon='{"token": "133b98650f594c769d7912aa6e27f21a"}'
+        />
       </body>
     </html>
   );
