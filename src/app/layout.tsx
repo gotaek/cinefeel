@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MOG - Cinema Goods Events",
   description: "Collect and track cinema goods events with AI-powered insights.",
+  icons: {
+    icon: "/mog-logo-final.svg",
+  },
 };
 
 export default function RootLayout({
