@@ -46,11 +46,18 @@ export const metadata: Metadata = {
     title: "MOG - 영화관 3사 굿즈 모아보기",
     description: "CGV, 롯데시네마, 메가박스 굿즈 정보를 한눈에. 놓치기 쉬운 한정판 굿즈 일정을 확인하세요.",
     siteName: "MOG",
+    images: [{
+      url: "/og.png",
+      width: 1200,
+      height: 630,
+      alt: "MOG - 영화관 3사 굿즈 모아보기",
+    }],
   },
   twitter: {
     card: "summary_large_image",
     title: "MOG - 영화관 3사 굿즈 모아보기",
     description: "CGV, 롯데시네마, 메가박스 굿즈 정보를 한눈에.",
+    images: ["/og.png"],
   },
   verification: {
     google: "google-site-verification=YOUR_VERIFICATION_CODE", // User needs to fill this later
