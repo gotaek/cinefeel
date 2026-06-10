@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react';
+import { MogLogo } from '@/components/ui/MogLogo';
 
 interface HeaderProps {
   searchQuery: string;
@@ -10,15 +11,14 @@ export const Header: React.FC<HeaderProps> = ({ searchQuery, setSearchQuery }) =
     <header className="sticky top-0 z-40 bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/mog-logo-final.svg" alt="MOG Logo" className="w-8 h-8 object-contain" />
+          <MogLogo />
           <h1 className="text-xl font-black tracking-tighter uppercase italic">MOG</h1>
         </div>
-        
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="영화 또는 굿즈 검색..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
